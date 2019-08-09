@@ -57,7 +57,7 @@ fn main() {
         Opcode::Halt
     ];
 
-    //used to select which program to run
+    //selects which program to run
     let program= whileloop;
 
     let mut m = machine::build_machine(&program);
