@@ -1,6 +1,7 @@
-use std::collections::VecDeque;
+use std::collections::{VecDeque, HashMap};
 use super::opcodes::Opcode;
-use super::frame;
+use super::frame::Frame;
+use std::env::set_var;
 
 //data for vm
 pub struct Machine<'a> {
@@ -8,6 +9,7 @@ pub struct Machine<'a> {
     ip: i32,
     stack: VecDeque<f32>,
     halted: bool,
+    frame: Frame<'a>,
 }
 
 impl<'a> Machine<'a> {
@@ -56,7 +58,7 @@ impl<'a> Machine<'a> {
     }
 
     //decoding and executing all instructions
-    fn decode(&mut self, instruction: &Opcode) {
+    fn decode(&mut self, instruction: &'a Opcode) {
         match instruction {
             //halt
             Opcode::Halt => self.halted = true,
@@ -150,6 +152,17 @@ impl<'a> Machine<'a> {
                 }
             }
 
+            //heap allocation
+            //note: store will pop from stack and add to heap, load will copy heap and push onto stack
+            Opcode::Store(key) => {
+                self.check_stack(1);
+                let s1 = self.stack.pop_back().unwrap();
+                self.frame.set_var(key, s1);
+            },
+            Opcode::Load(key) => {
+                self.stack.push_back(self.frame.get_var(key));
+            }
+
             _ => panic!("Error: unknown opcode.")
         }
     }
@@ -157,10 +170,15 @@ impl<'a> Machine<'a> {
 
 //helper function to instantiate a new vm with a program loaded onto it
 pub fn build_machine(program: &[Opcode]) -> Machine {
+    let top_frame = Frame {
+        vars: HashMap::new()
+    };
+
     Machine {
         program,
         ip: 0,
         stack: VecDeque::new(),
-        halted: false
+        halted: false,
+        frame: top_frame,
     }
 }

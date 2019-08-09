@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 pub struct Frame<'a> {
-    vars: HashMap<&'a str, f32>
+    pub vars: HashMap<&'a str, f32>
 }
 
 impl<'a> Frame<'a> {
@@ -12,7 +12,7 @@ impl<'a> Frame<'a> {
         }
     }
 
-    pub fn set_var(&mut self, key: &str, value: f32) {
-        self.vars.insert(key, value);
+    pub fn set_var(&mut self, key: &'a str, value: f32) {
+        self.vars.insert( key, value);
     }
 }

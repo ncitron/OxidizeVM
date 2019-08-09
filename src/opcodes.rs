@@ -10,8 +10,8 @@ pub enum Opcode {
     Dup,
 
     //heap store/load
-    Store,
-    Load,
+    Store(String),
+    Load(String),
 
     //arithmatic operations
     Add,
