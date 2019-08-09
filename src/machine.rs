@@ -161,6 +161,11 @@ impl<'a> Machine<'a> {
             },
             Opcode::Load(key) => {
                 self.stack.push_back(self.frame.get_var(key));
+            },
+
+            //io
+            Opcode::Print => {
+                println!("> {}", self.stack.pop_back().unwrap());
             }
 
             _ => panic!("Error: unknown opcode.")

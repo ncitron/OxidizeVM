@@ -36,4 +36,7 @@ pub enum Opcode {
     Iseq,
     Isge,
     Isgt,
+
+    //io
+    Print,
 }
