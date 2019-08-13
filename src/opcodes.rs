@@ -25,7 +25,7 @@ pub enum Opcode {
     Or,
 
     //function call/return
-    Call,
+    Call(i32),
     Ret,
 
     //unconditional and conditional jumps

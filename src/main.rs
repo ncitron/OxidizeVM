@@ -28,7 +28,7 @@ fn main() {
     ];
 
     //whileloop
-    let  whileloop= [
+    let  while_loop= [
         Opcode::Push(1.0),
         Opcode::Dup,
         Opcode::Store("a".to_string()),
@@ -39,13 +39,12 @@ fn main() {
         Opcode::Push(10.0),
         Opcode::Store("end".to_string()),
 
-        Opcode::Load("i".to_string()),
-
         //loop contents
         Opcode::Load("i".to_string()),
         Opcode::Print,
         //end loop contents
 
+        Opcode::Load("i".to_string()),
         Opcode::Push(1.0),
         Opcode::Add,
         Opcode::Store("i".to_string()),
@@ -57,10 +56,27 @@ fn main() {
         Opcode::Halt
     ];
 
+    //test function
+
+    let test_function = [
+        Opcode::Push(1.0),
+        Opcode::Store("local".to_string()),
+        Opcode::Call(6),
+        Opcode::Load("local".to_string()),
+        Opcode::Print,
+        Opcode::Halt,
+
+        Opcode::Load("local".to_string()),
+        Opcode::Print,
+        Opcode::Ret,
+
+    ];
+
     //selects which program to run
-    let program= whileloop;
+    let program= test_function;
 
     let mut m = machine::build_machine(&program);
     m.run();
     m.print_stack();
+
 }

@@ -9,7 +9,7 @@ pub struct Machine<'a> {
     ip: i32,
     stack: VecDeque<f32>,
     halted: bool,
-    frame: Frame<'a>,
+    frames: VecDeque<Frame<'a>>,
 }
 
 impl<'a> Machine<'a> {
@@ -157,16 +157,28 @@ impl<'a> Machine<'a> {
             Opcode::Store(key) => {
                 self.check_stack(1);
                 let s1 = self.stack.pop_back().unwrap();
-                self.frame.set_var(key, s1);
+                self.frames.back_mut().unwrap().set_var(key, s1);
             },
             Opcode::Load(key) => {
-                self.stack.push_back(self.frame.get_var(key));
+                self.stack.push_back(self.frames.back_mut().unwrap().get_var(key));
             },
 
             //io
             Opcode::Print => {
                 println!("> {}", self.stack.pop_back().unwrap());
-            }
+            },
+
+            //call and ret
+            Opcode::Call(address) => {
+                self.frames.push_back(Frame {
+                    vars: HashMap::new(),
+                    return_address: self.ip,
+                });
+                self.ip = *address;
+            },
+            Opcode::Ret => {
+                self.ip = self.frames.pop_back().unwrap().return_address;
+            },
 
             _ => panic!("Error: unknown opcode.")
         }
@@ -176,14 +188,18 @@ impl<'a> Machine<'a> {
 //helper function to instantiate a new vm with a program loaded onto it
 pub fn build_machine(program: &[Opcode]) -> Machine {
     let top_frame = Frame {
-        vars: HashMap::new()
+        vars: HashMap::new(),
+        return_address: 0,
     };
+
+    let mut frame_stack = VecDeque::new();
+    frame_stack.push_back(top_frame);
 
     Machine {
         program,
         ip: 0,
         stack: VecDeque::new(),
         halted: false,
-        frame: top_frame,
+        frames: frame_stack,
     }
 }

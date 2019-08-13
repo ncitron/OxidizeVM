@@ -1,7 +1,8 @@
 use std::collections::HashMap;
 
 pub struct Frame<'a> {
-    pub vars: HashMap<&'a str, f32>
+    pub vars: HashMap<&'a str, f32>,
+    pub return_address: i32
 }
 
 impl<'a> Frame<'a> {
