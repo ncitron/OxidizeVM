@@ -1,16 +1,18 @@
 mod machine;
 mod opcodes;
 mod frame;
+mod stackobj;
 use opcodes::Opcode;
-use std::borrow::Borrow;
+use crate::machine::Machine;
+use crate::stackobj::StackObj;
 
 fn main() {
 
     //finds the max of two values
     let max_program = [
-        Opcode::Push(2.0),
+        Opcode::Push(StackObj::Num(2.0)),
         Opcode::Store("var1".to_string()),
-        Opcode::Push(3.0),
+        Opcode::Push(StackObj::Num(3.0)),
         Opcode::Store("var2".to_string()),
 
         Opcode::Load("var1".to_string()),
@@ -29,14 +31,14 @@ fn main() {
 
     //whileloop
     let  while_loop= [
-        Opcode::Push(1.0),
+        Opcode::Push(StackObj::Num(1.0)),
         Opcode::Dup,
         Opcode::Store("a".to_string()),
         Opcode::Store("b".to_string()),
-        Opcode::Push(0.0),
+        Opcode::Push(StackObj::Num(0.0)),
         Opcode::Store("i".to_string()),
 
-        Opcode::Push(10.0),
+        Opcode::Push(StackObj::Num(10.0)),
         Opcode::Store("end".to_string()),
 
         //loop contents
@@ -45,7 +47,7 @@ fn main() {
         //end loop contents
 
         Opcode::Load("i".to_string()),
-        Opcode::Push(1.0),
+        Opcode::Push(StackObj::Num(1.0)),
         Opcode::Add,
         Opcode::Store("i".to_string()),
         Opcode::Load("end".to_string()),
@@ -57,9 +59,8 @@ fn main() {
     ];
 
     //test function
-
     let test_function = [
-        Opcode::Push(1.0),
+        Opcode::Push(StackObj::Num(0.0)),
         Opcode::Store("local".to_string()),
         Opcode::Call(6),
         Opcode::Load("local".to_string()),
@@ -72,10 +73,15 @@ fn main() {
 
     ];
 
-    //selects which program to run
-    let program= test_function;
+    let stack_pusher = [
+        Opcode::Push(StackObj::Num(1.0)),
+        Opcode::Halt,
+    ];
 
-    let mut m = machine::build_machine(&program);
+    //selects which program to run
+    let program= stack_pusher;
+
+    let mut m = Machine::new(&program);
     m.run();
     m.print_stack();
 

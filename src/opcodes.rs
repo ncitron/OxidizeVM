@@ -1,3 +1,5 @@
+use super::stackobj::StackObj;
+
 //list of opcodes for the vm
 
 pub enum Opcode {
@@ -5,7 +7,7 @@ pub enum Opcode {
     Halt,
 
     //stack manipulation
-    Push(f32),
+    Push(StackObj),
     Pop,
     Dup,
 

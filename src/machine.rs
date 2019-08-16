@@ -1,13 +1,13 @@
 use std::collections::{VecDeque, HashMap};
 use super::opcodes::Opcode;
 use super::frame::Frame;
-use std::env::set_var;
+use super::stackobj::StackObj;
 
 //data for vm
 pub struct Machine<'a> {
     program: &'a [Opcode],
     ip: i32,
-    stack: VecDeque<f32>,
+    stack: VecDeque<StackObj>,
     halted: bool,
     frames: VecDeque<Frame<'a>>,
 }
@@ -15,7 +15,10 @@ pub struct Machine<'a> {
 impl<'a> Machine<'a> {
     //prints contents of stack
     pub fn print_stack(&self) {
-        println!("{:?}", self.stack);
+        println!("Stack contents: ");
+        for stack in self.stack.iter() {
+            println!("{}", stack);
+        }
     }
 
     //runs program
@@ -41,7 +44,11 @@ impl<'a> Machine<'a> {
     }
 
     //helpers to convert between floats (from the stack) and booleans
-    fn to_bool(&self, n: f32) -> bool {
+    pub fn to_bool(s: StackObj) -> bool {
+        let n = match s {
+            StackObj::Num(arg) => arg,
+            _ => panic!("Cannot cast non number to boolean.")
+        };
         if n  < 0.000001 {
             false
         } else {
@@ -49,11 +56,11 @@ impl<'a> Machine<'a> {
         }
     }
 
-    fn to_float(&self, n: bool) -> f32 {
+    pub fn to_float(n: bool) -> StackObj {
         if n {
-            1.0
+            StackObj::Num(1.0)
         } else {
-            0.0
+            StackObj::Num(0.0)
         }
     }
 
@@ -83,8 +90,9 @@ impl<'a> Machine<'a> {
             },
             Opcode::Sub => {
                 self.check_stack(2);
-                let res = -self.stack.pop_back().unwrap() + self.stack.pop_back().unwrap();
-                self.stack.push_back(res);
+                let s2 = self.stack.pop_back().unwrap();
+                let s1 = self.stack.pop_back().unwrap();
+                self.stack.push_back(s1-s2);
             },
             Opcode::Mul => {
                 self.check_stack(2);
@@ -93,7 +101,9 @@ impl<'a> Machine<'a> {
             },
             Opcode::Div => {
                 self.check_stack(2);
-                let res = 1.0/self.stack.pop_back().unwrap() * self.stack.pop_back().unwrap();
+                let s2 = self.stack.pop_back().unwrap();
+                let s1 = self.stack.pop_back().unwrap();
+                let res = s1/s2;
                 self.stack.push_back(res);
             },
 
@@ -103,21 +113,21 @@ impl<'a> Machine<'a> {
                 let s1 = self.stack.pop_back().unwrap();
                 let s2 = self.stack.pop_back().unwrap();
 
-                let res = self.to_bool(s1) && self.to_bool(s2);
-                self.stack.push_back(self.to_float(res));
+                let res = Machine::to_bool(s1) && Machine::to_bool(s2);
+                self.stack.push_back(Machine::to_float(res));
             },
             Opcode::Or => {
                 self.check_stack(2);
                 let s1 = self.stack.pop_back().unwrap();
                 let s2 = self.stack.pop_back().unwrap();
 
-                let res = self.to_bool(s1) || self.to_bool(s2);
-                self.stack.push_back(self.to_float(res));
+                let res = Machine::to_bool(s1) || Machine::to_bool(s2);
+                self.stack.push_back(Machine::to_float(res));
             },
             Opcode::Not => {
                 self.check_stack(1);
                 let s1 = self.stack.pop_back().unwrap();
-                let res = self.to_float(!self.to_bool(s1));
+                let res = Machine::to_float(!Machine::to_bool(s1));
                 self.stack.push_back(res);
             },
 
@@ -126,19 +136,19 @@ impl<'a> Machine<'a> {
                 self.check_stack(2);
                 let s2 = self.stack.pop_back().unwrap();
                 let s1 = self.stack.pop_back().unwrap();
-                self.stack.push_back(self.to_float(s1 == s2))
+                self.stack.push_back(Machine::to_float(s1 == s2))
             },
             Opcode::Isgt => {
                 self.check_stack(2);
                 let s2 = self.stack.pop_back().unwrap();
                 let s1 = self.stack.pop_back().unwrap();
-                self.stack.push_back(self.to_float(s1 > s2))
+                self.stack.push_back(Machine::to_float(s1 > s2))
             },
             Opcode::Isge => {
                 self.check_stack(2);
                 let s2 = self.stack.pop_back().unwrap();
                 let s1 = self.stack.pop_back().unwrap();
-                self.stack.push_back(self.to_float(s1 >= s2));
+                self.stack.push_back(Machine::to_float(s1 >= s2));
             },
 
             //branching
@@ -147,7 +157,7 @@ impl<'a> Machine<'a> {
             },
             Opcode::Jif(new_ip) => {
                 let s1 = self.stack.pop_back().unwrap();
-                if self.to_bool(s1) {
+                if Machine::to_bool(s1) {
                     self.ip = *new_ip;
                 }
             }
@@ -183,23 +193,23 @@ impl<'a> Machine<'a> {
             _ => panic!("Error: unknown opcode.")
         }
     }
-}
 
-//helper function to instantiate a new vm with a program loaded onto it
-pub fn build_machine(program: &[Opcode]) -> Machine {
-    let top_frame = Frame {
-        vars: HashMap::new(),
-        return_address: 0,
-    };
+    //create a new machine and load "program" in it
+    pub fn new(program: &[Opcode]) -> Machine {
+        let top_frame = Frame {
+            vars: HashMap::new(),
+            return_address: 0,
+        };
 
-    let mut frame_stack = VecDeque::new();
-    frame_stack.push_back(top_frame);
+        let mut frame_stack = VecDeque::new();
+        frame_stack.push_back(top_frame);
 
-    Machine {
-        program,
-        ip: 0,
-        stack: VecDeque::new(),
-        halted: false,
-        frames: frame_stack,
+        Machine {
+            program,
+            ip: 0,
+            stack: VecDeque::new(),
+            halted: false,
+            frames: frame_stack,
+        }
     }
 }
