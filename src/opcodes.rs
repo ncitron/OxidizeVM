@@ -15,7 +15,7 @@ pub enum Opcode {
     Store(String),
     Load(String),
 
-    //arithmatic operations
+    //arithmetic operations
     Add,
     Sub,
     Mul,
